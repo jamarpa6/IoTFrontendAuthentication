@@ -5,7 +5,7 @@ import bottle
 from bottle import response, request, static_file, template, abort
 import paho.mqtt.client as mqtt
 
-correct_users={"javi":"1234","alec":"2039"}
+correct_users={"user":"pass"}
 correct_tokens={}
 client = mqtt.Client()
 
@@ -215,5 +215,5 @@ def setChanel():
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
-srv = SSLWebServer(host='192.168.1.141', port=4443)
+srv = SSLWebServer(host='ip', port=4443)
 bottle.run(server=srv)
