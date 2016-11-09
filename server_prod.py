@@ -1,19 +1,28 @@
 #!/usr/bin/python
 
+#Web IoT interface to provide a secure managment panel with encryptation and user authoritation
+#using Bottle Framework. The connection with internal IoT services are provided by Paho MQTT client for Pyton
+#
+
+
+#Import of modules used to create the webserver and the mqtt client
 import time, os, binascii
 import bottle
 from bottle import response, request, static_file, template, abort
 import paho.mqtt.client as mqtt
 
+#List of correct users, it can be replace with a SQL connection to get the names and passwords
 correct_users={"user":"pass"}
 correct_tokens={}
 client = mqtt.Client()
 
+#Driving system to known state
 primer_inicio = 1;
 estado="off";
 canal=1;
 volumen=0;
 
+#Using ssl server to provide encrypted connection
 class SSLWebServer(bottle.ServerAdapter):
 	def run(self, handler):
         	from wsgiref.simple_server import make_server
@@ -26,6 +35,11 @@ class SSLWebServer(bottle.ServerAdapter):
 		
         	srv.serve_forever()
 
+#############################################################
+#Assignment between URI's REST resources and Python functions
+#############################################################
+
+#Index route
 @bottle.route('/', method='GET')
 @bottle.route('/index', method='GET')
 @bottle.route('/index.html', method='GET')
@@ -33,30 +47,37 @@ def root():
 	print "Recibo peticion"
 	return template("index.html")
 
+#Login service
 @bottle.route('/login', method='GET')
 def principal():
+	#Analizing user cookie parameters
 	token=request.get_cookie('Token_auth')
         usr=request.get_cookie('User_name')
         print "Estos son el token y el user de la cookie"
         print token
         print usr
+	#Checking if the user has been autorized
         if usr in correct_tokens and token==correct_tokens[usr]:
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
-        else:
+        #If user doesn't have a correct authoritation token, send error page
+	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 	
 @bottle.route('/<filename:path>')
 def send_Static(filename):
 	return static_file(filename, root='./')
 
+#Authorize client first time for each one using cookies
 @bottle.route('/login', method='POST')
 def login():
+	#Checking user and password parameters
         print "Entro a comprobar usuario y contrasena"
 	user = request.forms.get("user")
 	passwd = request.forms.get("passwd")
 	print "Usuario y contrasena: "
 	print user
 	print passwd
+	#If correct user, save and send a authorized token and load control panel
 	if user in correct_users and correct_users[user]==passwd:
 		print "Usuario correcto"
 		token=binascii.b2a_hex(os.urandom(15))
@@ -67,6 +88,7 @@ def login():
 		response.set_cookie('User_name',user,path='/')
 		print (response)
 		return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
+	#Else send html error page
 	else:
 		return template("error.html")		
 
@@ -214,6 +236,6 @@ def setChanel():
 
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
-
+#Running the server
 srv = SSLWebServer(host='ip', port=4443)
 bottle.run(server=srv)
