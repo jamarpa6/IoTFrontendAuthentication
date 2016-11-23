@@ -77,72 +77,87 @@ def login():
 	print "Usuario y contrasena: "
 	print user
 	print passwd
-	#If correct user, save and send a authorized token and load control panel
+	#If correct user, save and send an authorized token and load control panel
 	if user in correct_users and correct_users[user]==passwd:
 		print "Usuario correcto"
+		#Generating raonom token for this user
 		token=binascii.b2a_hex(os.urandom(15))
+		#Storing token for the user in the dictionary
 		correct_tokens[user]=token
 		print "Guardo el token"
 		print token
+		#Set cookies with token and user for the browser
 		response.set_cookie('Token_auth',token,path='/')
 		response.set_cookie('User_name',user,path='/')
 		print (response)
+		#Return HTML page
 		return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
 	#Else send html error page
 	else:
 		return template("error.html")		
 
+#Get the state of the HI-FI sound system
 @bottle.route('/estado', method='GET')
 def getState():
 	print "Entro a consultar el estado de la cadena"
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
+	#If user is authenticated, let him/her acces
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return estado
+	#Else, return error page
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
+#Set new state to the HI-FI sound system
 @bottle.route('/estado', method='POST')
 def setState():
 	print "Entro a la funcion start/stop"
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
-
+	
+	#If user is authenticated, let him/her acces
 	if usr in correct_tokens and token==correct_tokens[usr]:
+		#Internal global variables to control execution state and first start
 		global estado
 		global primer_inicio
 
+		#If HI-FI is on, turn it off
 		if estado=="on":
 			print "Apago cadena"
 			client.connect("localhost",11883,60)
 			client.publish("/estado","off")
 			estado="off"
-		else:
-			if estado=="off":
-				print "Enciendo cadena"
-				client.connect("localhost",11883,60)
-				client.publish("/estado","on")
-				if primer_inicio:
-					print "Es el primer inicio"
-					time.sleep(5)		
-					client.publish("/reset","reset")
-					time.sleep(3)
-					primer_inicio=0
-				estado="on"
+		#If it is off, turn it on
+		if estado=="off":
+			print "Enciendo cadena"
+			client.connect("localhost",11883,60)
+			client.publish("/estado","on")
+			#If this is the first start, set known values to HI-FI
+			if primer_inicio:
+				print "Es el primer inicio"
+				time.sleep(5)		
+				client.publish("/reset","reset")
+				time.sleep(3)
+				primer_inicio=0
+			estado="on"
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
-
+	#If user is authenticated, let him/her acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
 @bottle.route('/volumen', method='POST')
 def setVolume():
 	print "Entro a la funcion para actualizar volumen"
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
@@ -171,13 +186,15 @@ def setVolume():
 					print volumen
 
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
-
+	
+	#If user is authenticated, let him/her acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
 @bottle.route('/volumen', method='GET')
 def getVolume():
 	print "Entro en la funcion para saber el estado del volume"
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
@@ -185,12 +202,14 @@ def getVolume():
 	print usr
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(volumen)
+	#If user is authenticated, let him/her acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
 @bottle.route('/canal',method='GET')
 def getChanel():
 	print "Entro en la funcion para saber el canal"
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
@@ -198,13 +217,14 @@ def getChanel():
 	print usr
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(canal)
+	#If user is authenticated, let him/her acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
 @bottle.route('/canal', method='POST')
 def setChanel():
 	print "Entro en la funcion para cambiar el canal"
-
+	#Get credentials for the user
 	token=request.get_cookie('Token_auth')
 	usr=request.get_cookie('User_name')
 	print "Estos son el token y el user de la cookie"
@@ -234,6 +254,7 @@ def setChanel():
 					canal=canal-1
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
 
+	#If user is authenticated, let him/her acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 #Running the server
