@@ -139,6 +139,7 @@ def setState():
 		#If it is off, turn it on
 		if estado=="off":
 			print "Enciendo cadena"
+			#Connect to MQTT server and publish in topic
 			client.connect("localhost",11883,60)
 			client.publish("/estado","on")
 			#If this is the first start, set known values to HI-FI
@@ -150,7 +151,7 @@ def setState():
 				primer_inicio=0
 			estado="on"
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
-	#If user is authenticated, let him/her acces
+	#Else reject acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
@@ -164,14 +165,19 @@ def setVolume():
 	print token
 	print usr
 
+	#If user is authenticated, let him/her acces
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		global volumen
 		vol=request.forms.get("vol")
 		print vol
+		#Connect to MQTT server
 		client.connect("localhost",11883,60)
+		#If user wants to up volume
 		if vol=="up":
 			print "Subo volumen"
+			#If volume is below max value
 			if volumen<30:
+				#Publish in topic
 				client.publish("/volumen",vol)
 				volumen=volumen+1
 				print "el nuevo volumen es"
@@ -179,7 +185,9 @@ def setVolume():
 		else:
 			if vol=="down":
 				print "Bajo volumen"
+				#If volume is over 0
 				if volumen>0:
+					#Publish in topic
 					client.publish("/volumen",vol)
 					volumen=volumen-1
 					print "el nuevo volumen es"
@@ -187,7 +195,7 @@ def setVolume():
 
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
 	
-	#If user is authenticated, let him/her acces
+	#Else reject acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
@@ -202,7 +210,7 @@ def getVolume():
 	print usr
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(volumen)
-	#If user is authenticated, let him/her acces
+	#Else reject acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
@@ -217,7 +225,7 @@ def getChanel():
 	print usr
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(canal)
-	#If user is authenticated, let him/her acces
+	#Else reject acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 
@@ -254,7 +262,7 @@ def setChanel():
 					canal=canal-1
                 return template("panelsimplificado.tpl",volume=str(volumen),state=str(estado),channel=str(canal))
 
-	#If user is authenticated, let him/her acces
+	#Else reject acces
 	else:
 		return abort(401,'ACCION NO AUTORIZADA A ESTE USUARIO, VUELVA A LA PAGINA DE INICIO PARA REALIZAR EL LOGIN')
 #Running the server
