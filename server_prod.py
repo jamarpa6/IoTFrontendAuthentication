@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-#Web IoT interface to provide a secure managment panel with encryptation and user authoritation
+#Web IoT frontend to provide a secure managment panel with encryptation and user authoritation
 #using Bottle Framework. The connection with internal IoT services are provided by Paho MQTT client for Pyton
 #
 
@@ -106,7 +106,7 @@ def getState():
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
-	#If user is authenticated, let him/her acces
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return estado
 	#Else, return error page
@@ -124,7 +124,7 @@ def setState():
 	print token
 	print usr
 	
-	#If user is authenticated, let him/her acces
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		#Internal global variables to control execution state and first start
 		global estado
@@ -165,7 +165,7 @@ def setVolume():
 	print token
 	print usr
 
-	#If user is authenticated, let him/her acces
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		global volumen
 		vol=request.forms.get("vol")
@@ -208,6 +208,7 @@ def getVolume():
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(volumen)
 	#Else reject acces
@@ -223,6 +224,7 @@ def getChanel():
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		return str(canal)
 	#Else reject acces
@@ -238,25 +240,32 @@ def setChanel():
 	print "Estos son el token y el user de la cookie"
 	print token
 	print usr
+	#If user is authenticated, let him/her access
 	if usr in correct_tokens and token==correct_tokens[usr]:
 		global canal
 		can=request.forms.get("can")
+		#Connect to MQTT server and publish in topic
 		client.connect("localhost",11883,60)
 		client.publish("/canal",can)
+		#To up channel
 		if can=='up':
 			print "Entro a subir canal"
+			#If channel is the maximum value
 			if canal==13:
 				print "Como el canal ya es 13 pasa a ser 1"
 				canal=1
 			else:
 				print "Como el canal no es 13, canal++"
 				canal=canal+1
+		#To down channel
 		else:
 			if can=='down':
 				print "Entro a bajar canal"
+				#If channel is the maximum value
 				if canal==1:
 					print "Como el canal ya es 13, pongo 13"
 					canal=13
+				#If channel is the maximum value
 				else:
 					print "Como el canal no es 1, canal --"
 					canal=canal-1
